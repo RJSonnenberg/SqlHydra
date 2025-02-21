@@ -48,6 +48,8 @@ Thanks to these awesome F# community contributors:
         <a href="https://github.com/aciq"><img src="https://avatars.githubusercontent.com/u/36763595?v=4&s=100" style="width: 100px" alt=""/>
         <br /><a href="https://github.com/JordanMarr/SqlHydra/commits?author=aciq" title="Code">💻</a>
     </td>
+  <tr>
+  </tr>
     <td align="center">
         <a href="https://github.com/jwosty"><img src="https://avatars.githubusercontent.com/u/4031185?v=4&s=100" style="width: 100px" alt=""/>
         <br /><a href="https://github.com/JordanMarr/SqlHydra/commits?author=jwosty" title="Code">💻</a>
@@ -63,6 +65,10 @@ Thanks to these awesome F# community contributors:
    <td align="center">
         <a href="https://github.com/RJSonnenberg"><img src="https://avatars.githubusercontent.com/u/24612120?v=4" style="width: 100px" alt=""/>
         <br /><a href="https://github.com/JordanMarr/SqlHydra/commits?author=RJSonnenberg" title="Code">💻</a>
+    </td>
+   <td align="center">
+        <a href="https://github.com/michelbieleveld"><img src="https://avatars.githubusercontent.com/u/4332783?v=4" style="width: 100px" alt=""/>
+        <br /><a href="https://github.com/JordanMarr/SqlHydra/commits?author=michelbieleveld" title="Code">💻</a>
     </td>
   </tr>
 </table>
