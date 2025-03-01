@@ -1,7 +1,7 @@
 [general]
 connection = "Data Source=TestData/AdventureWorksLT.db"
-output = "Sqlite/AdventureWorksNet6.fs"
-namespace = "Sqlite.AdventureWorksNet6"
+output = "Sqlite/AdventureWorksNet9.fs"
+namespace = "Sqlite.AdventureWorksNet9"
 cli_mutable = true
 [sqlhydra_query_integration]
 provider_db_type_attributes = true

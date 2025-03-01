@@ -1,10 +1,8 @@
 [general]
 connection = "Server=localhost,12019;Database=AdventureWorks;User=sa;Password=Password#123;TrustServerCertificate=True"
-output = "SqlServer/AdventureWorksNullableNet6.fs"
-namespace = "SqlServer.AdventureWorksNullableNet6"
+output = "SqlServer/AdventureWorksNet9.fs"
+namespace = "SqlServer.AdventureWorksNet9"
 cli_mutable = true
-mutable_properties = true
-nullable_property_type = "Nullable"
 [sqlhydra_query_integration]
 provider_db_type_attributes = true
 table_declarations = true

@@ -5,11 +5,11 @@ open SqlHydra.Query
 open DB
 open NUnit.Framework
 
-#if NET6_0
-open SqlServer.AdventureWorksNet6
-#endif
 #if NET8_0
 open SqlServer.AdventureWorksNet8
+#endif
+#if NET9_0
+open SqlServer.AdventureWorksNet9
 #endif
 
 type OptionalBoolEntity = 

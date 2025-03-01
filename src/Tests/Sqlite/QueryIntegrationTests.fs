@@ -6,11 +6,11 @@ open SqlHydra.Query.SqliteExtensions
 open Swensen.Unquote
 open NUnit.Framework
 open System.Threading.Tasks
-#if NET6_0
-open Sqlite.AdventureWorksNet6
-#endif
 #if NET8_0
 open Sqlite.AdventureWorksNet8
+#endif
+#if NET9_0
+open Sqlite.AdventureWorksNet9
 #endif
 
 let openContext() = 

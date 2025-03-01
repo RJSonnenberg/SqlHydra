@@ -7,11 +7,11 @@ open DB
 open NUnit.Framework
 open System.Threading.Tasks
 open Swensen.Unquote
-#if NET6_0
-open SqlServer.AdventureWorksNet6
-#endif
 #if NET8_0
 open SqlServer.AdventureWorksNet8
+#endif
+#if NET9_0
+open SqlServer.AdventureWorksNet9
 #endif
 open Microsoft.SqlServer.Types
 open HydraBuilders

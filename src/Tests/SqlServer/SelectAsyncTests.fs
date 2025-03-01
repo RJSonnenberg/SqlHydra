@@ -5,11 +5,11 @@ open Swensen.Unquote
 open NUnit.Framework
 open DB
 
-#if NET6_0
-open SqlServer.AdventureWorksNet6
-#endif
 #if NET8_0
 open SqlServer.AdventureWorksNet8
+#endif
+#if NET9_0
+open SqlServer.AdventureWorksNet9
 #endif
 
 let openContext() = 

@@ -6,11 +6,11 @@ open DB
 open NUnit.Framework
 open System
 
-#if NET6_0
-open SqlServer.AdventureWorksNullableNet6
-#endif
 #if NET8_0
 open SqlServer.AdventureWorksNullableNet8
+#endif
+#if NET9_0
+open SqlServer.AdventureWorksNullableNet9
 #endif
 
 type OptionalBoolEntity = 

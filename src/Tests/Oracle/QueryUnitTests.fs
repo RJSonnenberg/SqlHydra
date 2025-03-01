@@ -6,11 +6,11 @@ open SqlHydra.Query
 open NUnit.Framework
 open DB
 
-#if NET6_0
-open Oracle.AdventureWorksNet6
-#endif
 #if NET8_0
 open Oracle.AdventureWorksNet8
+#endif
+#if NET9_0
+open Oracle.AdventureWorksNet9
 #endif
 
 [<Test>]

@@ -4,11 +4,11 @@ open Swensen.Unquote
 open SqlHydra.Query
 open NUnit.Framework
 open DB
-#if NET6_0
-open Npgsql.AdventureWorksNet6
-#endif
 #if NET8_0
 open Npgsql.AdventureWorksNet8
+#endif
+#if NET9_0
+open Npgsql.AdventureWorksNet9
 #endif
 
 [<Test>]

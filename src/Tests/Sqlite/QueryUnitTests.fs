@@ -5,11 +5,11 @@ open SqlHydra.Query
 open DB
 open NUnit.Framework
 open Swensen.Unquote
-#if NET6_0
-open Sqlite.AdventureWorksNet6
-#endif
 #if NET8_0
 open Sqlite.AdventureWorksNet8
+#endif
+#if NET9_0
+open Sqlite.AdventureWorksNet9
 #endif
 
 [<Test>]

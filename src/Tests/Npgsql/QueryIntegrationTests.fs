@@ -6,11 +6,11 @@ open SqlHydra.Query.NpgsqlExtensions
 open NUnit.Framework
 open System.Threading.Tasks
 open DB
-#if NET6_0
-open Npgsql.AdventureWorksNet6
-#endif
 #if NET8_0
 open Npgsql.AdventureWorksNet8
+#endif
+#if NET9_0
+open Npgsql.AdventureWorksNet9
 #endif
 
 let openContext() = 
@@ -555,16 +555,16 @@ let ``Enum Tests``() = task {
 
     use ctx = openContext ()
 
-#if NET6_0
-    (ctx.Connection :?> Npgsql.NpgsqlConnection)
-        .TypeMapper.MapEnum<ext.mood>("ext.mood") |> ignore
-#else
+//#if NET6_0
+//    (ctx.Connection :?> Npgsql.NpgsqlConnection)
+//        .TypeMapper.MapEnum<ext.mood>("ext.mood") |> ignore
+//#else
     // https://www.npgsql.org/doc/release-notes/7.0.html#managing-type-mappings-at-the-connection-level-is-no-longer-supported
     // https://www.npgsql.org/doc/release-notes/7.0.html#global-type-mappings-must-now-be-done-before-any-usage
     let dataSourceBuilder = NpgsqlDataSourceBuilder(DB.connectionString)
     //dataSourceBuilder.MapEnum<ext.mood>("ext.mood") |> ignore    
     dataSourceBuilder.MapEnum<ext.mood>() |> ignore    
-#endif
+//#endif
 
     let! deleteResults =
         deleteTask ctx {
