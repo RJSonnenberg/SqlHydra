@@ -6,7 +6,7 @@ open System
 open System.Threading
 
 /// The base insert builder that contains all common operations
-type InsertBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>() =
+type InsertBuilder<'Inserted, 'InsertReturn>() =
 
     let getQueryOrDefault (state: QuerySource<'T>) =
         match state with
@@ -95,7 +95,7 @@ type InsertBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>() =
 
 
 /// An insert builder that returns a Task result.
-type InsertAsyncBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>(ct: ContextType) =
+type InsertAsyncBuilder<'Inserted, 'InsertReturn>(ct: ContextType) =
     inherit InsertBuilder<'Inserted, 'InsertReturn>()
 
     member this.Run (state: QuerySource<'Inserted, InsertQuerySpec<'Inserted, 'InsertReturn>>) = 
@@ -115,7 +115,7 @@ type InsertAsyncBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>(ct
 
 
 /// An insert builder that returns an Async result.
-type InsertTaskBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>(ct: ContextType, cancellationToken: CancellationToken) =
+type InsertTaskBuilder<'Inserted, 'InsertReturn>(ct: ContextType, cancellationToken: CancellationToken) =
     inherit InsertBuilder<'Inserted, 'InsertReturn>()
     
     new(ct) = InsertTaskBuilder(ct, CancellationToken.None)
@@ -136,17 +136,17 @@ type InsertTaskBuilder<'Inserted, 'InsertReturn when 'InsertReturn : struct>(ct:
 
 
 /// Builds an insert query that can be manually run by piping into QueryContext insert methods
-let insert<'Inserted, 'InsertReturn when 'InsertReturn : struct> = 
+let insert<'Inserted, 'InsertReturn> = 
     InsertBuilder<'Inserted, 'InsertReturn>()
 
 /// Builds an insert query that returns an Async result
-let insertAsync<'Inserted, 'InsertReturn when 'InsertReturn : struct> ct = 
+let insertAsync<'Inserted, 'InsertReturn> ct = 
     InsertAsyncBuilder<'Inserted, 'InsertReturn>(ct)
 
 /// Builds an insert query that returns a Task result
-let insertTask<'Inserted, 'InsertReturn when 'InsertReturn : struct> ct = 
+let insertTask<'Inserted, 'InsertReturn> ct = 
     InsertTaskBuilder<'Inserted, 'InsertReturn>(ct)
     
 /// Builds an insert query with a CancellationToken - returns a Task result
-let insertTaskCancellable<'Inserted, 'InsertReturn when 'InsertReturn : struct> ct cancellationToken =
+let insertTaskCancellable<'Inserted, 'InsertReturn> ct cancellationToken =
     InsertTaskBuilder<'Inserted, 'InsertReturn>(ct, cancellationToken)

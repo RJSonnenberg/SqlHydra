@@ -211,7 +211,7 @@ type QueryContext(conn: DbConnection, compiler: SqlKata.Compilers.Compiler) =
             return entities |> Seq.tryHead
         }
 
-    member this.Insert<'T, 'InsertReturn when 'InsertReturn : struct> (iq: InsertQuery<'T, 'InsertReturn>) = 
+    member this.Insert<'T, 'InsertReturn> (iq: InsertQuery<'T, 'InsertReturn>) = 
         let compiledQuery = iq.ToKataQuery() |> compiler.Compile
         use cmd = this.BuildCommand(compiledQuery, log = false) // We will log manually below to capture query changes
 
@@ -274,13 +274,14 @@ type QueryContext(conn: DbConnection, compiler: SqlKata.Compilers.Compiler) =
             // 'InsertReturn is `int` here -- NOTE: must include `'InsertReturn : struct` constraint
             Convert.ChangeType(results, typeof<'InsertReturn>) :?> 'InsertReturn
 
-    member this.InsertAsync<'T, 'InsertReturn when 'InsertReturn : struct> (query: InsertQuery<'T, 'InsertReturn>) = 
+    member this.InsertAsync<'T, 'InsertReturn> (query: InsertQuery<'T, 'InsertReturn>) = 
         this.InsertAsyncWithOptions(query)
     
-    member this.InsertAsyncWithOptions<'T, 'InsertReturn when 'InsertReturn : struct> (iq: InsertQuery<'T, 'InsertReturn>, ?cancel: CancellationToken) = 
+    member this.InsertAsyncWithOptions<'T, 'InsertReturn> (iq: InsertQuery<'T, 'InsertReturn>, ?cancel: CancellationToken) = 
         task { // Must wrap in task to prevent `EndExecuteNonQuery` ex in NET6_0_OR_GREATER
             let compiledQuery = iq.ToKataQuery() |> compiler.Compile
             use cmd = this.BuildCommand(compiledQuery, log = false) // We will log manually below to capture query changes
+            let cancel = defaultArg cancel CancellationToken.None
 
             // Applies on conflict modifier if in spec
             let applyOnConflict =
@@ -293,8 +294,8 @@ type QueryContext(conn: DbConnection, compiler: SqlKata.Compilers.Compiler) =
             KataUtils.failIfIdentityOnConflict iq.Spec
 
             // Did the user select an identity field?
-            match iq.Spec.IdentityField with
-            | Some identityField -> 
+            match iq.Spec with
+            | { IdentityField = Some identityField } ->
                 // Try apply on conflict
                 cmd.CommandText <- cmd.CommandText |> applyOnConflict
 
@@ -319,15 +320,30 @@ type QueryContext(conn: DbConnection, compiler: SqlKata.Compilers.Compiler) =
                     outputParam.DbType <- Data.DbType.Decimal
                     outputParam.Direction <- Data.ParameterDirection.Output
                     cmd.Parameters.Add(outputParam) |> ignore
-                    let! _ = cmd.ExecuteNonQueryAsync(cancel |> Option.defaultValue CancellationToken.None)
+                    let! _ = cmd.ExecuteNonQueryAsync(cancel)
                     // 'InsertReturn type set via `getId` in the builder
                     return Convert.ChangeType(outputParam.Value, typeof<'InsertReturn>) :?> 'InsertReturn
                 else
-                    let! identity = cmd.ExecuteScalarAsync(cancel |> Option.defaultValue CancellationToken.None)
+                    let! identity = cmd.ExecuteScalarAsync(cancel)
                     // 'InsertReturn type set via `getId` in the builder
                     return Convert.ChangeType(identity, typeof<'InsertReturn>) :?> 'InsertReturn
         
-            | None ->
+            | { OutputFields = outputFields } when outputFields.Length > 0 -> 
+                // Try apply on conflict
+                cmd.CommandText <- cmd.CommandText |> applyOnConflict
+
+                // Append SQL Server output clause
+                cmd.CommandText <- OutputClause.inserted outputFields cmd.CommandText
+
+                // Fix Oracle multi-insert query
+                if compiler :? SqlKata.Compilers.OracleCompiler && iq.Spec.Entities.Length > 1 
+                then cmd.CommandText <- cmd.CommandText |> Fixes.Oracle.fixMultiInsertQuery 
+                
+                this.LogCommand(compiledQuery, cmd)
+
+                let! outputValues = OutputClause.readValues<'InsertReturn> cmd cancel outputFields
+                return outputValues
+            | _ ->
                 // Try apply on conflict
                 cmd.CommandText <- cmd.CommandText |> applyOnConflict
 
@@ -337,22 +353,32 @@ type QueryContext(conn: DbConnection, compiler: SqlKata.Compilers.Compiler) =
                 
                 this.LogCommand(compiledQuery, cmd)
 
-                let! results = cmd.ExecuteNonQueryAsync(cancel |> Option.defaultValue CancellationToken.None)
+                let! results = cmd.ExecuteNonQueryAsync(cancel)
                 // 'InsertReturn is `int` here -- NOTE: must include `'InsertReturn : struct` constraint
                 return Convert.ChangeType(results, typeof<'InsertReturn>) :?> 'InsertReturn
         }
     
-    member this.Update (query: UpdateQuery<'T>) = 
+    member this.Update (query: UpdateQuery<'T, 'UpdateReturn>) = 
         use cmd = this.BuildCommand(query.ToKataQuery())
         cmd.ExecuteNonQuery()
 
-    member this.UpdateAsync (query: UpdateQuery<'T>) = 
+    member this.UpdateAsync (query: UpdateQuery<'T, 'UpdateReturn>) = 
         this.UpdateAsyncWithOptions(query)
     
-    member this.UpdateAsyncWithOptions (query: UpdateQuery<'T>, ?cancel: CancellationToken) = 
+    member this.UpdateAsyncWithOptions (query: UpdateQuery<'T, 'UpdateReturn>, ?cancel: CancellationToken) = 
         task { // Must wrap in task to prevent `EndExecuteNonQuery` ex in NET6_0_OR_GREATER
+            let cancel = defaultArg cancel CancellationToken.None
+
             use cmd = this.BuildCommand(query.ToKataQuery())
-            return! cmd.ExecuteNonQueryAsync(cancel |> Option.defaultValue CancellationToken.None)
+            
+            if query.Spec.OutputFields.Length > 0 then 
+                // Append SQL Server output clause
+                cmd.CommandText <- OutputClause.updated query.Spec.OutputFields cmd.CommandText
+                let! outputValues = OutputClause.readValues<'UpdateReturn> cmd cancel query.Spec.OutputFields
+                return outputValues 
+            else
+                let! rowsInserted = cmd.ExecuteNonQueryAsync(cancel)
+                return Convert.ChangeType(rowsInserted, typeof<'UpdateReturn>) :?> 'UpdateReturn
         }
 
     member this.Delete (query: DeleteQuery<'T>) = 

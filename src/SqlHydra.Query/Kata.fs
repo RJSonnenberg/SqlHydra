@@ -88,22 +88,36 @@ type InsertQuerySpec<'T, 'Identity> =
         Entities: 'T list
         Fields: string list
         IdentityField: string option
+        OutputFields: OutputField list
         InsertType: InsertType
     }
     static member Default : InsertQuerySpec<'T, 'Identity> = 
-        { Table = ""; Entities = []; Fields = []; IdentityField = None; InsertType = Insert }
+        { Table = ""; Entities = []; Fields = []; IdentityField = None; OutputFields = []; InsertType = Insert }
 
-type UpdateQuerySpec<'T> = 
+and OutputField = 
+    {
+        ColumnName: string
+        PropertyType: Type
+        Nullability: Nullability
+    }
+
+and Nullability = 
+    | IsOptional
+    | IsNullable
+    | NotNullable
+
+type UpdateQuerySpec<'T, 'UpdateReturn> = 
     {
         Table: string
         Entity: 'T option
         Fields: string list
         SetValues: (string * obj) list
         Where: Query option
+        OutputFields: OutputField list
         UpdateAll: bool
     }
-    static member Default = 
-        { Table = ""; Entity = Option<'T>.None; Fields = []; SetValues = []; Where = None; UpdateAll = false }
+    static member Default : UpdateQuerySpec<'T, 'UpdateReturn> = 
+        { Table = ""; Entity = Option<'T>.None; Fields = []; SetValues = []; Where = None; OutputFields = []; UpdateAll = false }
 
 type QuerySource<'T>(tableMappings) =
     interface IEnumerable<'T> with
@@ -154,7 +168,7 @@ module internal KataUtils =
         p.GetValue(entity) 
         |> getQueryParameterForValue p
         
-    let fromUpdate (spec: UpdateQuerySpec<'T>) = 
+    let fromUpdate (spec: UpdateQuerySpec<'T, 'UpdateReturn>) = 
         let kvps = 
             match spec.Entity, spec.SetValues with
             | Some entity, [] -> 
@@ -186,7 +200,7 @@ module internal KataUtils =
         | Some where -> q.Where(fun w -> where)
         | None -> q
 
-    let fromInsert (spec: InsertQuerySpec<'T, 'Identity>) =
+    let fromInsert (spec: InsertQuerySpec<'T, 'InsertReturn>) =
         let includedProperties = 
             match spec.Fields with
             | [] -> 
@@ -244,7 +258,7 @@ type DeleteQuery<'T>(query: SqlKata.Query) =
     member this.KataQuery = query
     override this.ToKataQuery() = query
 
-type UpdateQuery<'T>(spec: UpdateQuerySpec<'T>) =
+type UpdateQuery<'T, 'UpdateReturn>(spec: UpdateQuerySpec<'T, 'UpdateReturn>) =
     inherit SelectQuery()
     member this.Spec = spec
     member this.KataQuery = spec |> KataUtils.fromUpdate
