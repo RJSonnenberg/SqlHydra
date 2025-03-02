@@ -94,7 +94,9 @@ let mkTable cfg db (table: Table) schema = stringBuffer {
                         | NullablePropertyType.Option ->
                             $"Option<{baseType}>"
                         | NullablePropertyType.Nullable ->
-                            $"System.Nullable<{baseType}>"
+                            if col.TypeMapping.IsValueType() 
+                            then $"System.Nullable<{baseType}>"
+                            else baseType
                     else 
                         baseType
 
@@ -289,8 +291,22 @@ let wrapRef get (ord: int) =
                     if ptr.ClrType |> isValueType
                     then "wrapValue"
                     else "wrapRef"
+
+                    
+                // Exclude the SqlHierarchyId primitive type reader if the schema doesn't use it because it requires an addition NuGet package.
+                let primitiveTypeReaders = 
+                    let hierarchyIdClrType = "Microsoft.SqlServer.Types.SqlHierarchyId"
+
+                    let schemaHasHierarchyIdColumns = 
+                        db.Tables
+                        |> Seq.collect _.Columns
+                        |> Seq.exists (fun c -> c.TypeMapping.ClrType = hierarchyIdClrType)
+
+                    if schemaHasHierarchyIdColumns 
+                    then db.PrimitiveTypeReaders
+                    else db.PrimitiveTypeReaders |> Seq.filter (fun ptr -> ptr.ClrType <> hierarchyIdClrType)
                 
-                for i, ptr in db.PrimitiveTypeReaders |> Seq.indexed do
+                for i, ptr in primitiveTypeReaders |> Seq.indexed do
                     let if_elif = if i = 0 then "if" else "elif"
                     let readerGetFieldValueMethod =
                         if ptr.ClrType.EndsWith "[]"
