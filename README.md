@@ -791,7 +791,7 @@ open SqlHydra.Query.SqlServerExtensions
 
 let insertPerson (row: Person) =
   task {
-    let! (createDate, updateDate) =
+    let! createDate, updateDate =
         insertTask openContext {
             for p in dbo.Person do
             entity row
