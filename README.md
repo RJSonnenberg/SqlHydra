@@ -784,6 +784,9 @@ printfn "ErrorLogID Identity: %i" errorLogID
 #### Insert and Output Inserted Fields (SQL Server)
 `output` is a SQL Server feature that allows you to return one or more columns from an insert or update statement. 
 To use it, you must open the `SqlHydra.Query.SqlServerExtensions` module.
+* You may select one or more columns to return
+* Selecting the entire entity to be returned is not supported and will throw an exception.
+* Can not be used in conjunction with `getId`. (`getId` will take precedence.)
 
 ```F#
 open SqlHydra.Query
