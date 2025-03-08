@@ -781,6 +781,30 @@ let! errorLogID =
 printfn "ErrorLogID Identity: %i" errorLogID
 ```
 
+#### Insert and Output Inserted Fields (SQL Server)
+`output` is a SQL Server feature that allows you to return one or more columns from an insert or update statement. 
+To use it, you must open the `SqlHydra.Query.SqlServerExtensions` module.
+* You may select one or more columns to return
+* Selecting the entire entity to be returned is not supported and will throw an exception.
+* Can not be used in conjunction with `getId`. (`getId` will take precedence.)
+
+```F#
+open SqlHydra.Query
+open SqlHydra.Query.SqlServerExtensions
+
+let insertPerson (row: Person) =
+  task {
+    let! createDate, updateDate =
+        insertTask openContext {
+            for p in dbo.Person do
+            entity row
+            output (e.CreateDate, e.UpdateDate)
+        }
+
+    return updateDate
+  }
+```
+
 #### Multiple Inserts
 To insert multiple entities in one query, use the `entities` operation in conjunction with the `AtLeastOne` type to ensure that at least one item exists in the collection. (The `AtLeastOne` forces you to handle the case where an empty collection is passed to `entities` which would throw a runtime exception.)
 
