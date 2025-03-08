@@ -13,10 +13,14 @@ open Npgsql.AdventureWorksNet8
 open Npgsql.AdventureWorksNet9
 #endif
 
+let dataSource = 
+    let builder = NpgsqlDataSourceBuilder(connectionString)
+    builder.MapEnum<ext.mood>("ext.mood") |> ignore    
+    builder.Build()
+
 let openContext() = 
-    let compiler = SqlKata.Compilers.PostgresCompiler()
-    let conn = new Npgsql.NpgsqlConnection(connectionString)
-    conn.Open()
+    let compiler = SqlKata.Compilers.PostgresCompiler()        
+    let conn = dataSource.OpenConnection()
     new QueryContext(conn, compiler)
 
 [<Test>]
@@ -549,22 +553,9 @@ let ``Insert, Update and Read npgsql provider specific db fields``() = task {
         ()
 }
 
-[<Test; Ignore("This test works with npgsql v7, but fails with v8.")>]
+[<Test>]
 let ``Enum Tests``() = task {
-    //Npgsql.NpgsqlConnection.GlobalTypeMapper.MapEnum<experiments.mood>("experiments.mood") |> ignore
-
     use ctx = openContext ()
-
-//#if NET6_0
-//    (ctx.Connection :?> Npgsql.NpgsqlConnection)
-//        .TypeMapper.MapEnum<ext.mood>("ext.mood") |> ignore
-//#else
-    // https://www.npgsql.org/doc/release-notes/7.0.html#managing-type-mappings-at-the-connection-level-is-no-longer-supported
-    // https://www.npgsql.org/doc/release-notes/7.0.html#global-type-mappings-must-now-be-done-before-any-usage
-    let dataSourceBuilder = NpgsqlDataSourceBuilder(DB.connectionString)
-    //dataSourceBuilder.MapEnum<ext.mood>("ext.mood") |> ignore    
-    dataSourceBuilder.MapEnum<ext.mood>() |> ignore    
-//#endif
 
     let! deleteResults =
         deleteTask ctx {
