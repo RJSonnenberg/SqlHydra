@@ -154,25 +154,24 @@ To regenerate after a Rebuild (only when in Debug mode), you can run SqlHydra fr
 
 ### Support for Postgres Enums
 Postgres enum types are generated as CLR enums!
-You will, however, still need to manually "register" your custom enums.
+You will, however, need to manually register your custom enums with Npgsql.
 
-If using `Npgsql` v7 or later:
 ```F#
 // Global mapping should occur only once at startup:
-// `experiments.mood` is the generated enum, and "experiments.mood" is the "{schema}.{enum}".
-let dataSourceBuilder = NpgsqlDataSourceBuilder(DB.connectionString)
-dataSourceBuilder.MapEnum<ext.mood>("ext.mood") |> ignore
-```
-* See: [Npgsql Docs - type mappings update 1](https://www.npgsql.org/doc/release-notes/7.0.html#managing-type-mappings-at-the-connection-level-is-no-longer-supported)
-* See: [Npgsql Docs - type mappings update 2](https://www.npgsql.org/doc/release-notes/7.0.html#global-type-mappings-must-now-be-done-before-any-usage)
+// `ext.mood` is the generated enum, and "ext.mood" is the "{schema}.{enum}".
 
-If using `Npgsql` v6 or earlier:
-```F#
-// Global mapping should occur only once at startup:
-// `experiments.mood` is the generated enum, and "experiments.mood" is the "{schema}.{enum}".
-Npgsql.NpgsqlConnection.GlobalTypeMapper.MapEnum<experiments.mood>(nameof experiments.mood) |> ignore
+/// This should be created once per app
+let dataSource = 
+    let builder = NpgsqlDataSourceBuilder("connection string...")
+    builder.MapEnum<ext.mood>("ext.mood") |> ignore    
+    builder.Build()
+
+let openContext() = 
+    let compiler = SqlKata.Compilers.PostgresCompiler()
+    // You must create your connection from your dataSource with enum mappings
+    let conn = dataSource.OpenConnection() 
+    new QueryContext(conn, compiler)
 ```
-💥 `Npgsql` v8.0.0 fails when inserting an enum. 
 
 ### Support for Postgres Arrays
 SqlHydra.Cli supports `text[]` and `integer[]` column types.
