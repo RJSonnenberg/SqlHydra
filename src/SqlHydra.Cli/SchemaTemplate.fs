@@ -340,7 +340,10 @@ static member Read(reader: {reader.ReaderType}) =
             let ord = getOrdinalAndIncrement()
             fun () -> primitiveReader ord
         | None ->
-            let nameParts = t.FullName.Split([| '.'; '+' |])
+            let nameParts =
+                match t.FullName with
+                | null -> failwith $"Type {{t}} has no FullName"
+                | fullName -> fullName.Split([| '.'; '+' |])
             let schemaAndType = nameParts |> Array.skip (nameParts.Length - 2) |> fun parts -> System.String.Join(".", parts)
             hydra.GetReaderByName(schemaAndType, isOpt)
             
