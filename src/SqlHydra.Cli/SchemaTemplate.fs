@@ -237,20 +237,12 @@ let buildGetOrdinal tableType =
     fun col -> dictionary.Item col
             """
 
-            // Create lazy backing fields.
-            // Ex: let lazyPersonEmailAddress = lazy (Person.Readers.EmailAddressReader(reader, buildGetOrdinal 5 typeof<Person.EmailAddress))
-            // Ex: let lazypublicmigration = lazy (``public``.Readers.migrationReader(reader, buildGetOrdinal typeof<``public``.migration>))
+            // Create public reader properties
+            // Ex: member __.``HumanResources.Department`` = HumanResources.Readers.DepartmentReader(reader, buildGetOrdinal typeof<HumanResources.Department>)
             for table in allTables do
-                let readerClassName = $"{table.Name}Reader"
-                let lazySchemaTable = $"lazy{table.Schema}{table.Name}"
-                $"let {backticks lazySchemaTable} = lazy ({backticks table.Schema}.Readers.{backticks readerClassName}(reader, buildGetOrdinal typeof<{backticks table.Schema}.{table.Name}>))"
-
-            // Create public properties against the lazy backing fields.
-            // Ex: member __.``HumanResources.Department`` = lazyHumanResourcesDepartment.Value
-            for table in allTables do
-                let lazySchemaTable = $"lazy{table.Schema}{table.Name}"
                 let schemaTable = $"{table.Schema}.{table.Name}"
-                $"member __.{backticks schemaTable} = {backticks lazySchemaTable}.Value"
+                let readerClassName = $"{table.Name}Reader"
+                $"member __.{backticks schemaTable} = {backticks table.Schema}.Readers.{backticks readerClassName}(reader, buildGetOrdinal typeof<{backticks table.Schema}.{table.Name}>)"
 
             newLine
 
