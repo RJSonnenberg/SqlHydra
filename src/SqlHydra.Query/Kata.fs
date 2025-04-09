@@ -71,9 +71,8 @@ type LoggedSqlResult(r: SqlResult) =
     override this.ToString() = 
         let sb = Text.StringBuilder()
         sb.AppendLine(r.Sql) |> ignore
-        let parameters = SqlKata.Helper.Flatten(r.Bindings)
-        for p in parameters do
-            sb.AppendLine($"- {p}") |> ignore
+        for kvp in r.NamedBindings do
+            sb.AppendLine($"- {kvp.Key}: {kvp.Value}") |> ignore
         sb.ToString()
 
 type InsertType = 
