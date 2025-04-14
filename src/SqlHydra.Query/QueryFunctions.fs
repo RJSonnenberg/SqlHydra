@@ -57,7 +57,7 @@ module Where =
 [<AutoOpen>]
 module OrderBy = 
 
-    // infix operator ^^ that takes a boolean that determines whether .
+    // infix operator ^^ that takes a boolean that conditionally includes the sort property.
     let inline (^^) (_: bool) (prop: 'P) =
         prop
 
