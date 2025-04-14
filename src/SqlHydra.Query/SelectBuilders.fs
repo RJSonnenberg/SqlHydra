@@ -109,8 +109,9 @@ type SelectBuilder<'Selected, 'Mapped> () =
     /// Sets the WHERE condition
     [<CustomOperation("where", MaintainsVariableSpace = true)>]
     member this.Where (state: QuerySource<'T, Query>, [<ProjectionParameter>] whereExpression) = 
-        let query = state.Query        
-        let where = LinqExpressionVisitors.visitWhere<'T> whereExpression qualifyColumnWithAlias
+        let query = state.Query
+        let tableMappings = state.TableMappings |> Map.values
+        let where = LinqExpressionVisitors.visitWhere<'T> tableMappings whereExpression qualifyColumnWithAlias
         QuerySource<'T, Query>(query.Where(fun w -> where), state.TableMappings)
 
     /// Sets the SELECT statement and filters the query to include only the selected tables
@@ -166,6 +167,8 @@ type SelectBuilder<'Selected, 'Mapped> () =
                 | LinqExpressionVisitors.OrderByAggregateColumn (aggType, tableAlias, p) -> 
                     let fqCol = $"%s{tableAlias}.%s{p.Name}"
                     state.Query.OrderByRaw($"%s{aggType}(%s{fqCol})")
+                | LinqExpressionVisitors.OrderByIgnored -> 
+                    state.Query
         QuerySource<'T, Query>(orderedQuery, state.TableMappings)
 
     /// Sets the ORDER BY for single column
@@ -185,6 +188,8 @@ type SelectBuilder<'Selected, 'Mapped> () =
                 | LinqExpressionVisitors.OrderByAggregateColumn (aggType, tableAlias, p) -> 
                     let fqCol = $"%s{tableAlias}.%s{p.Name}"
                     state.Query.OrderByRaw($"%s{aggType}(%s{fqCol}) DESC")
+                | LinqExpressionVisitors.OrderByIgnored -> 
+                    state.Query
         QuerySource<'T, Query>(orderedQuery, state.TableMappings)
 
     /// Sets the ORDER BY DESC for single column
@@ -311,7 +316,8 @@ type SelectBuilder<'Selected, 'Mapped> () =
     /// Sets the HAVING condition.
     [<CustomOperation("having", MaintainsVariableSpace = true)>]
     member this.Having (state: QuerySource<'T, Query>, [<ProjectionParameter>] havingExpression) = 
-        let having = LinqExpressionVisitors.visitHaving<'T> havingExpression qualifyColumnWithAlias
+        let tableMappings = state.TableMappings |> Map.values
+        let having = LinqExpressionVisitors.visitHaving<'T> tableMappings havingExpression qualifyColumnWithAlias
         QuerySource<'T, Query>(state.Query.Having(fun w -> having), state.TableMappings)
 
     /// Sets query to return DISTINCT values

@@ -12,22 +12,120 @@ open SqlServer.AdventureWorksNet8
 open SqlServer.AdventureWorksNet9
 #endif
 
-type OptionalBoolEntity = 
-    {
-        QuestionAnswered: bool option
-    }
-
 [<Test>]
 let ``Simple Where``() = 
+    let getCity() = "Dallas"
     let sql = 
         select {
             for a in Person.Address do
-            where (a.City = "Dallas")
+            where (a.City = getCity())
             orderBy a.City
         }
         |> toSql
 
     sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE ([a].[City] = @p0) ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional Where Clause``() = 
+    let cityFilter = Some "Dallas"
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            where (
+                (cityFilter.IsSome && a.City = cityFilter.Value)
+            )
+            orderBy a.City
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE ([a].[City] = @p0) ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional Where And Clauses, Both True``() = 
+    let cityFilter = true
+    let zipFilter = true
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            where (
+                (cityFilter && a.City = "Dallas") &&
+                (zipFilter && a.PostalCode = "75001")
+            )
+            orderBy a.City
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE (([a].[City] = @p0) AND ([a].[PostalCode] = @p1)) ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional Where And Clauses, One True``() = 
+    let cityFilter = Some "Dallas"
+    let zipFilter : Option<string> = None
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            where (
+                (cityFilter.IsSome && a.City = cityFilter.Value) //&&
+                //(zipFilter.IsSome && a.PostalCode = zipFilter.Value)
+            )
+            orderBy a.City
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE ([a].[City] = @p0) ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional Where And Clauses, Neither True``() = 
+    let cityFilter : Option<string> = None
+    let zipFilter : Option<string> = None
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            where (
+                (cityFilter.IsSome && a.City = cityFilter.Value) &&
+                (zipFilter.IsSome && a.PostalCode = zipFilter.Value)
+            )
+            orderBy a.City
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional Where Or Clauses, Both True``() = 
+    let cityFilter = Some "Dallas"
+    let zipFilter = Some "75001"
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            where (
+                (cityFilter.IsSome && a.City = cityFilter.Value) || 
+                (zipFilter.IsSome && a.PostalCode = zipFilter.Value)
+            )
+            orderBy a.City
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE (([a].[City] = @p0) OR ([a].[PostalCode] = @p1)) ORDER BY [a].[City]"
+
+[<Test>]
+let ``Conditional OrderBy``() = 
+    let isCitySortEnabled() = true
+
+    let sql = 
+        select {
+            for a in Person.Address do
+            orderBy (isCitySortEnabled() ^^ a.City)
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Person].[Address] AS [a] ORDER BY [a].[City]"
+
 
 [<Test>]
 let ``Simple Where - kata``() = 
@@ -46,7 +144,7 @@ let ``Select 1 Column``() =
     let sql =
         select {
             for a in Person.Address do
-            select (a.City)
+            select a.City
         }
         |> toSql
 
@@ -97,6 +195,9 @@ let ``Where bool is false``() =
         |> toSql
 
     sql.Contains("WHERE ([o].[OnlineOrderFlag] = cast(0 as bit))") =! true
+
+
+type OptionalBoolEntity = { QuestionAnswered: bool option }
 
 [<Test>]
 let ``Where bool option is true``() = 
@@ -174,6 +275,17 @@ let ``And Where``() =
         |> toSql
 
     sql.Contains("WHERE (([a].[City] = @p0) AND ([a].[City] = @p1))") =! true
+
+[<Test>]
+let ``Where Guid Empty``() = 
+    let sql =  
+        select {
+            for a in Person.Address do
+            where (a.rowguid = System.Guid.Empty)
+        }
+        |> toSql
+
+    sql.Contains("WHERE ([a].[rowguid] = @p0)") =! true
 
 [<Test>]
 let ``Where with AND and OR in Parenthesis``() = 
