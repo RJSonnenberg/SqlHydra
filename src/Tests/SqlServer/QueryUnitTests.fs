@@ -114,6 +114,26 @@ let ``Conditional Where Or Clauses, Both True``() =
     sql =! "SELECT * FROM [Person].[Address] AS [a] WHERE (([a].[City] = @p0) OR ([a].[PostalCode] = @p1)) ORDER BY [a].[City]"
 
 [<Test>]
+let ``Conditional Where Bit Column`` () = 
+    let sql = 
+        select {
+            for o in Sales.SalesOrderHeader do
+            where (o.OnlineOrderFlag && o.CustomerID = 123)
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Sales].[SalesOrderHeader] AS [o] WHERE (([o].[OnlineOrderFlag] = cast(1 as bit)) AND ([o].[CustomerID] = @p0))"
+
+    let sql = 
+        select {
+            for o in Sales.SalesOrderHeader do
+            where (not o.OnlineOrderFlag && o.CustomerID = 123)
+        }
+        |> toSql
+
+    sql =! "SELECT * FROM [Sales].[SalesOrderHeader] AS [o] WHERE (([o].[OnlineOrderFlag] = cast(0 as bit)) AND ([o].[CustomerID] = @p0))"
+
+[<Test>]
 let ``Conditional OrderBy``() = 
     let isCitySortEnabled() = true
 
@@ -341,7 +361,6 @@ let ``Where Customer isIn List``() =
         |> toSql
 
     sql.Contains("WHERE (([c].[CustomerID] IN (@p0, @p1, @p2)) AND ([c].[PersonID] IS NOT NULL))") =! true
-
 
 [<Test>]
 let ``Where Customer |=| List``() = 
