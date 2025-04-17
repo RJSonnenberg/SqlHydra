@@ -262,7 +262,8 @@ module SqlPatterns =
     let (|Value|_|) (exp: Expression) =
         match exp with
         | Constant c -> Some c.Value
-        | Call c -> 
+        // Do not try to evaluate QueryFunctions like `isIn`, `isNotIn`, etc.
+        | Call c when c.Method.Module.Name <> "SqlHydra.Query.dll" -> 
             compileAndEvaluateExpression exp |> Some
         | _ -> None
 
