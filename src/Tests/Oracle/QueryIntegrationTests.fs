@@ -13,6 +13,8 @@ open Oracle.AdventureWorksNet8
 open Oracle.AdventureWorksNet9
 #endif
 
+open HydraBuilders
+
 let openContext() = 
     let compiler = SqlKata.Compilers.OracleCompiler()
     let conn = new OracleConnection(connectionString)
@@ -26,68 +28,58 @@ let ``Where Name Contains``() = task {
     let addresses =
         select {
             for c in OT.CUSTOMERS do
-            where (c.NAME |=| [ "Staples"; "Aflac" ])
+            where (c.NAME |=| [ "ABC Corp"; "XYZ Ltd" ])
         }
         |> ctx.Read HydraReader.Read
 
     gt0 addresses
-    Assert.IsTrue(addresses |> Seq.forall (fun a -> a.NAME = "Staples" || a.NAME = "Aflac"), "Expected only 'Staples' or 'Aflac'.")
+    Assert.IsTrue(addresses |> Seq.forall (fun a -> a.NAME = "ABC Corp" || a.NAME = "XYZ Ltd"), "Expected only 'ABC Corp' or 'XYZ Ltd'.")
 }
 
 [<Test>]
-let ``Select Address Column Where Address Contains Detroit``() = task {
+let ``Select Address Column Where Address Contains USA``() = task {
     use ctx = openContext()
 
     let cities =
         select {
             for c in OT.CUSTOMERS do
-            where (c.ADDRESS =% "%Detroit%")
+            where (c.ADDRESS =% "%USA")
             select c.ADDRESS
         }
         |> ctx.Read HydraReader.Read
 
     gt0 cities
-    Assert.IsTrue(cities |> Seq.choose id |> Seq.forall (fun city -> city.Contains "Detroit"), "Expected all cities to contain 'Detroit'.")
+    Assert.IsTrue(cities |> Seq.choose id |> Seq.forall (fun city -> city.Contains "USA"), "Expected all cities to contain 'USA'.")
 }
 
 [<Test>]
 let ``Inner Join Orders-Details``() = task {
-    use ctx = openContext()
-
-    let query =
-        select {
+    let! results =
+        selectAsync openContext {
             for o in OT.ORDERS do
             join d in OT.ORDER_ITEMS on (o.ORDER_ID = d.ORDER_ID)
-            where (o.STATUS = "Pending")
+            where (o.STATUS = "Shipped")
             select (o, d)
         }
-
-    let! results = query |> ctx.ReadAsync HydraReader.Read
     gt0 results
 }
 
 [<Test>]
 let ``Product with Category name``() = task {
-    use ctx = openContext()
-
-    let query = 
-        select {
+    let! rows = 
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             join c in OT.PRODUCT_CATEGORIES on (p.CATEGORY_ID = c.CATEGORY_ID)
             select (c.CATEGORY_NAME, p)
             take 5
         }
-
-    let! rows = query |> ctx.ReadAsync HydraReader.Read
     gt0 rows
 }
 
 [<Test>]
 let ``Select Column Aggregates From Product IDs 1-3``() = task {
-    use ctx = openContext()
-
-    let query =
-        select {
+    let! aggregates =
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             join c in OT.PRODUCT_CATEGORIES on (p.CATEGORY_ID = c.CATEGORY_ID)
             where (p.LIST_PRICE <> None)
@@ -95,7 +87,6 @@ let ``Select Column Aggregates From Product IDs 1-3``() = task {
             select (p.CATEGORY_ID, minBy p.LIST_PRICE.Value, maxBy p.LIST_PRICE.Value, avgBy p.LIST_PRICE.Value, countBy p.LIST_PRICE.Value, sumBy p.LIST_PRICE.Value)
         }
 
-    let! aggregates = query |> ctx.ReadAsync HydraReader.Read
     gt0 aggregates
 
     let aggByCatID = 
@@ -110,15 +101,13 @@ let ``Select Column Aggregates From Product IDs 1-3``() = task {
         let aMinPrice, aMaxPrice, aAvgPrice, aPriceCount, aSumPrice = aggByCatID.[catId]
         dc aMinPrice xMinPrice; dc aMaxPrice xMaxPrice; dc aAvgPrice xAvgPrice; Assert.AreEqual(aPriceCount, xPriceCount); dc aSumPrice xSumPrice
     
-    verifyAggregateValuesFor 1 (554.99M, 3410.46M, 1386.966M, 70, 97087.65M)
-    verifyAggregateValuesFor 2 (739.99M, 5499.99M, 1406.098M, 50, 70304.9M)
-    verifyAggregateValuesFor 5 (15.55M, 8867.99M, 635.216M, 108, 68603.38M)
+    verifyAggregateValuesFor 1 (150.0M, 350.0M, 250.0M, 2, 500.0M)
+    verifyAggregateValuesFor 2 (250.0M, 750.0M, 500.0M, 2, 1000.0M)
+    verifyAggregateValuesFor 3 (200.0M, 200.0M, 200.0M, 1, 200.0M)
 }
 
 [<Test>]
 let ``Aggregate Subquery One``() = task {
-    use ctx = openContext()
-
     let avgListPrice = 
         select {
             for p in OT.PRODUCTS do
@@ -127,36 +116,31 @@ let ``Aggregate Subquery One``() = task {
         }
 
     let! productsWithHigherThanAvgPrice = 
-        select {
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             where (p.LIST_PRICE.Value > subqueryOne avgListPrice)
             orderByDescending p.LIST_PRICE
             select (p.PRODUCT_NAME, p.LIST_PRICE.Value)
         }
-        |> ctx.ReadAsync HydraReader.Read
 
-    let avgListPrice = 438.6662M
+    let actualAvgListPrice = 340.0M // verified from running the avg query manually
 
     gt0 productsWithHigherThanAvgPrice
-    Assert.IsTrue(productsWithHigherThanAvgPrice |> Seq.forall (fun (nm, price) -> price > avgListPrice), "Expected all prices to be > than avg price of $438.67.")
+    Assert.IsTrue(productsWithHigherThanAvgPrice |> Seq.forall (fun (nm, price) -> price > actualAvgListPrice), "Expected all prices to be > than avg price of $340.00.")
 }
 
 // This stopped working after implementing columns with table aliases.
 // ERROR: ORA-00904: "P"."LIST_PRICE": invalid identifier
 [<Test; Ignore "Ignore">]
 let ``Select Column Aggregates``() = task {
-    use ctx = openContext()
-
     let! aggregates = 
-        select {
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             where (p.LIST_PRICE <> None)
             groupBy p.CATEGORY_ID
             having (minBy p.LIST_PRICE.Value > 50M && maxBy p.LIST_PRICE.Value < 1000M)
             select (p.CATEGORY_ID, minBy p.LIST_PRICE.Value, maxBy p.LIST_PRICE.Value)
         }
-        |> ctx.ReadAsync HydraReader.Read
-
     gt0 aggregates
 }
 
@@ -208,8 +192,6 @@ let ``Where subqueryMany``() = task {
 
 [<Test>]
 let ``Where subqueryOne``() = task {
-    use ctx = openContext()
-
     let avgListPrice = 
         select {
             for p in OT.PRODUCTS do
@@ -217,12 +199,11 @@ let ``Where subqueryOne``() = task {
         } 
 
     let! productsWithAboveAveragePrice =
-        select {
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             where (p.LIST_PRICE <> None && p.LIST_PRICE.Value > subqueryOne avgListPrice)
             select (p.PRODUCT_NAME, p.LIST_PRICE.Value)
         }
-        |> ctx.ReadAsync HydraReader.Read
 
     gt0 productsWithAboveAveragePrice
 }
@@ -232,12 +213,11 @@ let ``Select Columns with Option``() = task {
     use ctx = openContext()
 
     let! values = 
-        select {
+        selectAsync openContext {
             for p in OT.PRODUCTS do
             where (p.LIST_PRICE <> None)
             select (p.CATEGORY_ID, p.LIST_PRICE)
         }
-        |> ctx.ReadAsync HydraReader.Read
 
     gt0 values
     Assert.IsTrue(values |> Seq.forall (fun (catId, price) -> price <> None), "Expected subcategories to all have a value.")
@@ -421,14 +401,14 @@ let ``Distinct Test``() = task {
         Assert.AreEqual(rowsInserted, 3, "Expected 3 rows to be inserted")
 
         let! results =
-            selectTask HydraReader.Read ctx {
+            selectTask ctx {
                 for c in OT.COUNTRIES do
                 where (c.COUNTRY_ID =% "X%")
                 select c.COUNTRY_NAME
             }
 
         let! distinctResults =
-            selectTask HydraReader.Read ctx {
+            selectTask ctx {
                 for c in OT.COUNTRIES do
                 where (c.COUNTRY_ID =% "X%")
                 select c.REGION_ID

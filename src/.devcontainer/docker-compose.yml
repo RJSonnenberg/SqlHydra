@@ -54,17 +54,19 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "54320:5432"
-
-  oracle:
-    hostname: oracle
-    container_name: oracle
-    build: 
-      context: ./oracle
-      dockerfile: Dockerfile.xe
+      
+  orcl:
+    hostname: orcl
+    container_name: orcl
+    image: gvenzl/oracle-xe:21-slim
     environment:
-      - ORACLE_PWD=oracle
-      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=oracle
+      - APP_USER=OT
+      - APP_USER_PASSWORD=Oracle1
     ports:
       - 1521:1521
+    volumes:
+      - ./orcl/init-ot-schema.sql:/docker-entrypoint-initdb.d/01_init_schema.sql
+      - ./orcl/init-ot-data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
     
     
