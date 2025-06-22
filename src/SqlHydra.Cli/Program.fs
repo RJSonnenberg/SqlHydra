@@ -2,6 +2,7 @@
 
 open System
 open FSharp.SystemCommandLine
+open Input
 
 let handler (provider: string, tomlFile: IO.FileInfo option, project: IO.FileInfo option, connString: string option) =
 
@@ -36,12 +37,12 @@ let handler (provider: string, tomlFile: IO.FileInfo option, project: IO.FileInf
 [<EntryPoint>]
 let main argv =
     rootCommand argv {
-        description "SqlHydra"
+        description "SqlHydra.Cli"
         inputs (
-            Input.Argument<string>("provider", "The database provider name: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'"),
-            Input.OptionMaybe<IO.FileInfo>(["-t"; "--toml-file"], "The toml configuration filename. Default: 'sqlhydra-{provider}.toml'"),
-            Input.OptionMaybe<IO.FileInfo>(["-p"; "--project"], "The project file to update. If not configured, the first .fsproj found in the run directory will be used."),
-            Input.OptionMaybe<string>(["-cs"; "--connection-string"], "The DB connection string to use. This will override the connection string in the toml file.")
+            argument "provider" |> required |> desc "The database provider name: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'",
+            optionMaybe "--toml-file" |> alias "-t" |> desc "The toml configuration filename. Default: 'sqlhydra-{provider}.toml'",
+            optionMaybe "--project" |> alias "-p" |> desc "The project file to update. If not configured, the first .fsproj found in the run directory will be used.",
+            optionMaybe "--connection-string" |> alias "-cs" |> desc "The DB connection string to use. This will override the connection string in the toml file."
         )
-        setHandler handler
+        setAction handler
     }
