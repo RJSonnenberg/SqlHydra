@@ -39,10 +39,26 @@ let main argv =
     rootCommand argv {
         description "SqlHydra.Cli"
         inputs (
-            argument "provider" |> required |> desc "The database provider name: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'",
-            optionMaybe "--toml-file" |> alias "-t" |> desc "The toml configuration filename. Default: 'sqlhydra-{provider}.toml'",
-            optionMaybe "--project" |> alias "-p" |> desc "The project file to update. If not configured, the first .fsproj found in the run directory will be used.",
-            optionMaybe "--connection-string" |> alias "-cs" |> desc "The DB connection string to use. This will override the connection string in the toml file."
+            argument "provider" 
+            |> required 
+            |> desc "The database provider name: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'"
+            |> validate (fun provider ->
+                match provider with
+                | "mssql" | "npgsql" | "sqlite" | "mysql" | "oracle" -> Ok ()
+                | _ -> Error $"Invalid db provider: '{provider}'. Valid options are: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'."
+            ),
+            
+            optionMaybe "--toml-file" 
+            |> alias "-t" 
+            |> desc "The toml configuration filename. Default: 'sqlhydra-{provider}.toml'",
+            
+            optionMaybe "--project" 
+            |> alias "-p" 
+            |> desc "The project file to update. If not configured, the first .fsproj found in the run directory will be used.",
+            
+            optionMaybe "--connection-string" 
+            |> alias "-cs" 
+            |> desc "The DB connection string to use. This will override the connection string in the toml file."
         )
         setAction handler
     }
