@@ -3,17 +3,24 @@
 open System
 open FSharp.SystemCommandLine
 open Input
+open Console
 
-let handler (provider: string, tomlFile: IO.FileInfo option, project: IO.FileInfo option, connString: string option) =
+type Provider = 
+    | SqlServer
+    | Npgsql
+    | Sqlite
+    | MySql
+    | Oracle
 
-    let info, getSchema =
+let handler (provider: Provider, tomlFile: IO.FileInfo option, project: IO.FileInfo option, connString: string option) =
+
+    let providerInfo, getSchema =
         match provider with
-        | "mssql" -> SqlServer.AppInfo.info, SqlServer.SqlServerSchemaProvider.getSchema
-        | "npgsql" -> Npgsql.AppInfo.info, Npgsql.NpgsqlSchemaProvider.getSchema
-        | "sqlite" -> Sqlite.AppInfo.info, Sqlite.SqliteSchemaProvider.getSchema
-        | "mysql" -> MySql.AppInfo.info, MySql.MySqlSchemaProvider.getSchema
-        | "oracle" -> Oracle.AppInfo.info, Oracle.OracleSchemaProvider.getSchema
-        | _ -> failwith "Unsupported db provider. Valid options are: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'."
+        | SqlServer -> SqlServer.AppInfo.info, SqlServer.SqlServerSchemaProvider.getSchema
+        | Npgsql -> Npgsql.AppInfo.info, Npgsql.NpgsqlSchemaProvider.getSchema
+        | Sqlite -> Sqlite.AppInfo.info, Sqlite.SqliteSchemaProvider.getSchema
+        | MySql -> MySql.AppInfo.info, MySql.MySqlSchemaProvider.getSchema
+        | Oracle -> Oracle.AppInfo.info, Oracle.OracleSchemaProvider.getSchema
 
     let projectOrFirstFound =
         project
@@ -23,8 +30,7 @@ let handler (provider: string, tomlFile: IO.FileInfo option, project: IO.FileInf
 
     let args : Console.Args =
         {
-            Provider = provider
-            AppInfo = info
+            AppInfo = providerInfo
             GetSchema = getSchema
             TomlFile = tomlFile |> Option.defaultWith (fun () -> IO.FileInfo($"sqlhydra-{provider}.toml"))
             Project = projectOrFirstFound
@@ -42,10 +48,14 @@ let main argv =
             argument "provider" 
             |> required 
             |> desc "The database provider name: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'"
-            |> validate (fun provider ->
-                match provider with
-                | "mssql" | "npgsql" | "sqlite" | "mysql" | "oracle" -> Ok ()
-                | _ -> Error $"Invalid db provider: '{provider}'. Valid options are: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'."
+            |> tryParse (fun res ->
+                match res.Tokens[0].Value with
+                | "mssql" -> Ok SqlServer
+                | "npgsql" -> Ok Npgsql
+                | "sqlite" -> Ok Sqlite
+                | "mysql" -> Ok MySql
+                | "oracle" -> Ok Oracle
+                | provider -> Error $"Invalid db provider: '{provider}'. Valid options are: 'mssql', 'npgsql', 'sqlite', 'mysql', or 'oracle'."
             ),
             
             optionMaybe "--toml-file" 

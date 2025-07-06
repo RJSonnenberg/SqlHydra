@@ -7,7 +7,6 @@ open SqlHydra.Domain
 
 type Args = 
     {
-        Provider: string
         AppInfo: AppInfo
         TomlFile: FileInfo
         Project: FileInfo
