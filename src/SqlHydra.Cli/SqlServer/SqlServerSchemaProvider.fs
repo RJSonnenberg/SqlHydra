@@ -5,7 +5,7 @@ open Microsoft.Data.SqlClient
 open SqlHydra.Domain
 open SqlHydra
 
-let getSchema (cfg: Config) (isLegacy: bool) : Schema = 
+let getSchema (cfg: Config, isLegacy: bool) : Schema = 
     use conn = new SqlConnection(cfg.ConnectionString)
     conn.Open()
     

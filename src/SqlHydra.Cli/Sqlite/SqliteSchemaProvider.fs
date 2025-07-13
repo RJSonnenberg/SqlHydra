@@ -10,7 +10,7 @@ let dbNullOpt<'T> (o: obj) : 'T option =
     | :? System.DBNull -> None
     | _ -> o :?> 'T |> Some
 
-let getSchema (cfg: Config) isLegacy : Schema = 
+let getSchema (cfg: Config, isLegacy: bool) : Schema = 
     use conn = new SQLiteConnection(cfg.ConnectionString)
     conn.Open()
     let sTables = conn.GetSchema("Tables", cfg.Filters.TryGetRestrictionsByKey("Tables"))

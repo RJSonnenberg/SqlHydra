@@ -5,7 +5,7 @@ open MySql.Data
 open SqlHydra.Domain
 open SqlHydra
 
-let getSchema (cfg: Config) isLegacy : Schema =
+let getSchema (cfg: Config, isLegacy: bool) : Schema =
     use conn = new MySqlClient.MySqlConnection(cfg.ConnectionString)
     conn.Open()
 

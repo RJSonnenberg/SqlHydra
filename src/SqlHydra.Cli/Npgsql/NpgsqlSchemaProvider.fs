@@ -4,7 +4,7 @@ open System.Data
 open SqlHydra.Domain
 open SqlHydra
 
-let getSchema (cfg: Config) (isLegacy: bool) : Schema =
+let getSchema (cfg: Config, isLegacy: bool) : Schema =
     use conn = new Npgsql.NpgsqlConnection(cfg.ConnectionString)
     conn.Open()
     // NOTE: GetSchema will fail if a Postgres enum doesn't exists in a custom schema but not in public schema.

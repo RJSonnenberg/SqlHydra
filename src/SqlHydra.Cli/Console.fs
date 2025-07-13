@@ -7,10 +7,9 @@ open SqlHydra.Domain
 
 type Args = 
     {
-        AppInfo: AppInfo
+        Provider: Provider
         TomlFile: FileInfo
         Project: FileInfo
-        GetSchema: Config -> IsLegacy -> Schema
         Version: string
         ConnectionString: string option
     }
@@ -54,7 +53,7 @@ let multiSelectDU<'T> (title: string) (options: 'T seq) =
 
 /// Presents a series of user prompts to create a new config file.
 let newConfigWizard (args: Args) = 
-    let app = args.AppInfo
+    let provider = args.Provider
     let connection = 
         let cn = AnsiConsole.Ask<string>("[blue]-[/] Enter a database [green]Connection String[/]:")
         cn.Replace(@"\\", @"\") // Fix if user copies an escaped backslash from an existing config
@@ -73,7 +72,7 @@ let newConfigWizard (args: Args) =
                 Config.NullablePropertyType = NullablePropertyType.Option
                 Config.ProviderDbTypeAttributes = true
                 Config.TableDeclarations = true
-                Config.Readers = Some { ReadersConfig.ReaderType = app.DefaultReaderType } 
+                Config.Readers = Some { ReadersConfig.ReaderType = provider.DefaultReaderType } 
                 Config.Filters = Filters.Empty // User must manually configure filter in .toml file
             }
         | OtherDataLibrary -> 
@@ -99,12 +98,12 @@ let newConfigWizard (args: Args) =
                 Config.NullablePropertyType = NullablePropertyType.Option
                 Config.ProviderDbTypeAttributes = false
                 Config.TableDeclarations = false
-                Config.Readers = Some { ReadersConfig.ReaderType = app.DefaultReaderType } 
+                Config.Readers = Some { ReadersConfig.ReaderType = provider.DefaultReaderType } 
                 Config.Filters = Filters.Empty // User must manually configure filter in .toml file
             }
 
     AnsiConsole.MarkupLine($"[green]-[/] {args.TomlFile.Name} has been created!")
-    if config.Readers <> None then AnsiConsole.MarkupLine($"[green]-[/] Please install the `{app.DefaultProvider}` NuGet package in your project.")
+    if config.Readers <> None then AnsiConsole.MarkupLine($"[green]-[/] Please install the `{provider.DefaultProvider}` NuGet package in your project.")
     if useCase = SqlHydraQueryIntegration then AnsiConsole.MarkupLine($"[green]-[/] Please install the `SqlHydra.Query` NuGet package in your project.")
     config
 
@@ -149,7 +148,7 @@ let printLegacyStatus (isLegacy: bool) =
 /// Creates a sqlhydra-*.toml file if necessary.
 let getOrCreateConfig (args: Args) = 
     AnsiConsole.WriteLine()
-    AnsiConsole.MarkupLine($"{args.AppInfo.Name} [gold1]v{args.Version}[/]")
+    AnsiConsole.MarkupLine($"{args.Provider.Name} [gold1]v{args.Version}[/]")
 
     match tryLoadConfig(args.TomlFile) with
     | Valid cfg -> 
@@ -197,8 +196,8 @@ let run (args: Args) =
     let generatedCode = 
         let isLegacy = Fsproj.targetsLegacyFramework args.Project
         printLegacyStatus isLegacy
-        let schema = args.GetSchema cfg isLegacy
-        SchemaTemplate.generate cfg args.AppInfo schema args.Version isLegacy
+        let schema = args.Provider.GetSchema(cfg, isLegacy)
+        SchemaTemplate.generate cfg args.Provider schema args.Version isLegacy
         |> formatCodeWithFantomas
         
 

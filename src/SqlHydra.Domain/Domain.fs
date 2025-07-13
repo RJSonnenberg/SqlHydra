@@ -2,12 +2,6 @@
 
 open System.Data
 
-type AppInfo = {
-    Name: string
-    DefaultReaderType: string
-    DefaultProvider: string
-}
-
 let private valueTypes = 
     Set [ "bool"; "int"; "int64"; "int16"; "byte"; "decimal"; "double"; "System.Single"
           "System.DateTimeOffset"; "System.DateTime"; "System.DateOnly"; "System.TimeOnly"
@@ -136,3 +130,20 @@ and [<RequireQualifiedAccess>]
     NullablePropertyType = 
     | Option
     | Nullable
+
+type Provider = 
+    {
+        Id: string
+        Name: string
+        Type: ProviderType
+        DefaultReaderType: string
+        DefaultProvider: string
+        GetSchema: Config * bool -> Schema
+    }
+
+and ProviderType = 
+    | SqlServer
+    | Npgsql
+    | Sqlite
+    | MySql
+    | Oracle
