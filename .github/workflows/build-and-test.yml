@@ -45,12 +45,12 @@ jobs:
         working-directory: src/
         run: dotnet test --framework net8.0
 
-      - name: Stop containers
+      - name: Stop and Start containers
         working-directory: src/.devcontainer
-        run: docker compose down
-      - name: Start containers
-        working-directory: src/.devcontainer
-        run: docker compose up -d mssql postgresql orcl
+        run: docker compose down && docker compose up -d mssql postgresql orcl
+      - name: Build
+        working-directory: src/
+        run: dotnet build --no-restore
       - name: Test net9.0
         working-directory: src/
         run: dotnet test --framework net9.0
