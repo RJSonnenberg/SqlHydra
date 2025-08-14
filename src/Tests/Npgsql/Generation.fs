@@ -18,14 +18,14 @@ let cfg =
         NullablePropertyType = NullablePropertyType.Option
         ProviderDbTypeAttributes = true
         TableDeclarations = false
-        Readers = Some { ReadersConfig.ReaderType = AppInfo.info.DefaultReaderType } 
+        Readers = Some { ReadersConfig.ReaderType = Provider.provider.DefaultReaderType } 
         Filters = Filters.Empty
     }
 
-let lazySchema = lazy NpgsqlSchemaProvider.getSchema cfg false
+let lazySchema = lazy NpgsqlSchemaProvider.getSchema (cfg, false)
 
 let getCode cfg =
-    SchemaTemplate.generate cfg AppInfo.info lazySchema.Value "---" false
+    SchemaTemplate.generate cfg Provider.provider lazySchema.Value "---" false
 
 let inCode (str: string) cfg = 
     let code = getCode cfg
@@ -37,7 +37,7 @@ let notInCode (str: string) cfg =
 
 [<Test; Ignore "Ignore">]
 let ``Print Schema``() =
-    let schema = NpgsqlSchemaProvider.getSchema cfg false
+    let schema = NpgsqlSchemaProvider.getSchema (cfg, false)
     printfn "Schema: %A" schema
 
 [<Test; Ignore "Ignore">]

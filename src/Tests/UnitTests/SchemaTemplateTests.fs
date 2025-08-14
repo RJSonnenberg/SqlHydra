@@ -10,8 +10,8 @@ let ``Schema Template Test - Npgsql`` () =
         { Npgsql.Generation.cfg with 
             TableDeclarations = true
         }
-    let info = Npgsql.AppInfo.info
-    let schema = Npgsql.NpgsqlSchemaProvider.getSchema cfg false
+    let info = Npgsql.Provider.provider
+    let schema = Npgsql.NpgsqlSchemaProvider.getSchema (cfg, false)
     let output = SchemaTemplate.generate cfg info schema "1.0.0" false
     printfn $"Output:\n{output}"
 
@@ -27,8 +27,8 @@ let ``Schema Template Test - SqlServer`` () =
                     Restrictions = Map.empty                
                 }
         }
-    let info = SqlServer.AppInfo.info
-    let schema = SqlServer.SqlServerSchemaProvider.getSchema cfg false
+    let info = SqlServer.Provider.provider
+    let schema = SqlServer.SqlServerSchemaProvider.getSchema (cfg, false)
     let output = SchemaTemplate.generate cfg info schema "1.0.0"
     printfn $"Output:\n{output}"
     // Write output to sqlserver.fs
