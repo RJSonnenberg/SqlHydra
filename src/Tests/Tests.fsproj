@@ -30,8 +30,8 @@
     <Compile Include="Sqlite\Generation.fs" />
     <Compile Include="SqlServer\AdventureWorksNet8.fs" Condition="'$(TargetFramework)' == 'net8.0'" />
     <Compile Include="SqlServer\AdventureWorksNet9.fs" Condition="'$(TargetFramework)' == 'net9.0'" />
-	<Compile Include="SqlServer\AdventureWorksNullableNet8.fs" Condition="'$(TargetFramework)' == 'net8.0'" />
-	<Compile Include="SqlServer\AdventureWorksNullableNet9.fs" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <Compile Include="SqlServer\AdventureWorksNullableNet8.fs" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <Compile Include="SqlServer\AdventureWorksNullableNet9.fs" Condition="'$(TargetFramework)' == 'net9.0'" />
     <Compile Include="SqlServer\DB.fs" />
     <Compile Include="SqlServer\QueryUnitTests.fs" />
     <Compile Include="SqlServer\QueryIntegrationTests.fs" />
@@ -67,9 +67,12 @@
     <PackageReference Include="Verify.NUnit" Version="22.1.4" />
     <PackageReference Include="Microsoft.SqlServer.Types" Version="160.1000.6" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.10" />
-    <PackageReference Include="Npgsql" Version="8.0.3" Condition="'$(TargetFramework)' == 'net8.0'" />
-    <PackageReference Include="Npgsql" Version="9.0.3" Condition="'$(TargetFramework)' == 'net9.0'" />
-    <!-- Npgsql v8.0.0 fails enum insert test -->
+    <!--
+      - Npgsql v9.0.x works for both .NET 8 and 9.
+      - Npgsql v8.0.x breaks when trying to insert a System.Net.IPNetwork for a CIDR column.
+      - Npgsql v8.0.x fails enum insert test.
+    -->
+    <PackageReference Include="Npgsql" Version="9.0.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SqlHydra.Query\SqlHydra.Query.fsproj" />
