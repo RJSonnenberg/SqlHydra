@@ -40,7 +40,7 @@ jobs:
         run: docker compose up -d mssql postgresql orcl
       - name: Build
         working-directory: src/
-        run: dotnet build --no-restore --framework net8.0
+        run: dotnet build --no-restore
       - name: Test net8.0
         working-directory: src/
         run: dotnet test --framework net8.0
@@ -51,9 +51,6 @@ jobs:
       - name: Start containers
         working-directory: src/.devcontainer
         run: docker compose up -d mssql postgresql orcl
-      - name: Build
-        working-directory: src/
-        run: dotnet build --no-restore --framework net9.0
       - name: Test net9.0
         working-directory: src/
         run: dotnet test --framework net9.0
