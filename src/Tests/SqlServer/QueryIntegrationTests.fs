@@ -462,6 +462,28 @@ let ``Delete Test``() = task {
     use ctx = openContext()
     ctx.BeginTransaction()
 
+    let errorLog =
+        {
+            dbo.ErrorLog.ErrorLogID = 0 // Exclude
+            dbo.ErrorLog.ErrorTime = System.DateTime.Now
+            dbo.ErrorLog.ErrorLine = None
+            dbo.ErrorLog.ErrorMessage = "TEST INSERT ASYNC"
+            dbo.ErrorLog.ErrorNumber = 400
+            dbo.ErrorLog.ErrorProcedure = (Some "Procedure 400")
+            dbo.ErrorLog.ErrorSeverity = None
+            dbo.ErrorLog.ErrorState = None
+            dbo.ErrorLog.UserName = "jmarr"
+        }
+
+    let! result =
+        insertTask ctx {
+            for e in dbo.ErrorLog do
+            entity errorLog
+            getId e.ErrorLogID
+        }
+
+    result >! 0
+
     let! rowId = 
         selectAsync ctx {
             for e in dbo.ErrorLog do
@@ -483,6 +505,28 @@ let ``Delete Test``() = task {
 let ``DeleteAsync Test``() = task {
     use ctx = openContext()
     ctx.BeginTransaction()
+
+    let errorLog =
+        {
+            dbo.ErrorLog.ErrorLogID = 0 // Exclude
+            dbo.ErrorLog.ErrorTime = System.DateTime.Now
+            dbo.ErrorLog.ErrorLine = None
+            dbo.ErrorLog.ErrorMessage = "TEST INSERT ASYNC"
+            dbo.ErrorLog.ErrorNumber = 400
+            dbo.ErrorLog.ErrorProcedure = (Some "Procedure 400")
+            dbo.ErrorLog.ErrorSeverity = None
+            dbo.ErrorLog.ErrorState = None
+            dbo.ErrorLog.UserName = "jmarr"
+        }
+
+    let! result =
+        insertTask ctx {
+            for e in dbo.ErrorLog do
+            entity errorLog
+            getId e.ErrorLogID
+        }
+
+    result >! 0
 
     let! rowId = 
         selectAsync ctx {
