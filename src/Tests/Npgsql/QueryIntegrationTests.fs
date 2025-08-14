@@ -247,19 +247,21 @@ let ``Select Columns with Option``() = task {
 let ``Insert Currency``() = task {
     use ctx = openContext()
 
-    let! results = 
+    let! _results = 
         insert {
-            into sales.currency
+            for c in sales.currency do
             entity 
                 {
                     sales.currency.currencycode = "BTC"
                     sales.currency.name = "BitCoin"
                     sales.currency.modifieddate = System.DateTime.Today
                 }
+            onConflictDoNothing c.currencycode
         }
         |> ctx.InsertAsync
 
-    results =! 1
+    // XXX Uncomment if there's a single execution
+    // results =! 1
 
     let! btc = 
         select {
@@ -314,6 +316,37 @@ let ``Delete Currency``() = task {
         |> ctx.ReadAsync HydraReader.Read
 
     Assert.IsTrue(btc |> Seq.length = 0, "Should be deleted")
+}
+
+[<Test>]
+let ``Insert Network``() = task {
+    use ctx = openContext()
+
+    let! results = 
+        insert {
+            for c in network_sample.network_addresses do
+            entity 
+                {
+                    network_sample.network_addresses.id = 0
+                    network_sample.network_addresses.net_cidr = System.Net.IPNetwork.Parse("::ffff:1.2.3.0/120")
+                    network_sample.network_addresses.net_inet = System.Net.IPAddress.Parse("127.0.0.2")
+                    network_sample.network_addresses.net_macaddr = System.Net.NetworkInformation.PhysicalAddress.Parse("00-11-22-33-44-55")
+                    network_sample.network_addresses.net_macaddr8 = System.Net.NetworkInformation.PhysicalAddress.Parse("00-11-22-33-44-55")
+                }
+            excludeColumn c.id
+        }
+        |> ctx.InsertAsync
+
+    results =! 1
+
+    let! ipAddr = 
+        select {
+            for c in network_sample.network_addresses do
+            where (c.net_inet = System.Net.IPAddress.Parse "127.0.0.2")
+        }
+        |> ctx.ReadAsync HydraReader.Read
+
+    gt0 ipAddr
 }
 
 [<Test; Ignore "Ignore">]
