@@ -247,7 +247,7 @@ let ``Select Columns with Option``() = task {
 let ``Insert Currency``() = task {
     use ctx = openContext()
 
-    let! _results = 
+    let! results =
         insert {
             for c in sales.currency do
             entity 
@@ -256,12 +256,10 @@ let ``Insert Currency``() = task {
                     sales.currency.name = "BitCoin"
                     sales.currency.modifieddate = System.DateTime.Today
                 }
-            onConflictDoNothing c.currencycode
         }
         |> ctx.InsertAsync
 
-    // XXX Uncomment if there's a single execution
-    // results =! 1
+    results =! 1
 
     let! btc = 
         select {
