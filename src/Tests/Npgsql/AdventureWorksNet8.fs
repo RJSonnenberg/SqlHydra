@@ -759,6 +759,42 @@ module humanresources =
             member __.ReadIfNotNull() =
                 if __.jobcandidateid.IsNull() then None else Some(__.Read())
 
+module network_sample =
+
+    [<CLIMutable>]
+    type network_addresses =
+        { [<ProviderDbType("Integer")>]
+          id: int
+          [<ProviderDbType("Cidr")>]
+          net_cidr: System.Net.IPNetwork
+          [<ProviderDbType("Inet")>]
+          net_inet: System.Net.IPAddress
+          [<ProviderDbType("MacAddr")>]
+          net_macaddr: System.Net.NetworkInformation.PhysicalAddress
+          [<ProviderDbType("MacAddr8")>]
+          net_macaddr8: System.Net.NetworkInformation.PhysicalAddress }
+
+    let network_addresses = table<network_addresses>
+
+    module Readers =
+        type network_addressesReader(reader: Npgsql.NpgsqlDataReader, getOrdinal) =
+            member __.id = RequiredColumn(reader, getOrdinal, reader.GetInt32, "id")
+            member __.net_cidr = RequiredColumn(reader, getOrdinal, reader.GetFieldValue, "net_cidr")
+            member __.net_inet = RequiredColumn(reader, getOrdinal, reader.GetFieldValue, "net_inet")
+            member __.net_macaddr = RequiredColumn(reader, getOrdinal, reader.GetFieldValue, "net_macaddr")
+            member __.net_macaddr8 = RequiredColumn(reader, getOrdinal, reader.GetFieldValue, "net_macaddr8")
+
+            member __.Read() =
+                { id = __.id.Read()
+                  net_cidr = __.net_cidr.Read()
+                  net_inet = __.net_inet.Read()
+                  net_macaddr = __.net_macaddr.Read()
+                  net_macaddr8 = __.net_macaddr8.Read() }
+                : network_addresses
+
+            member __.ReadIfNotNull() =
+                if __.id.IsNull() then None else Some(__.Read())
+
 module pe =
 
     [<CLIMutable>]
@@ -6904,6 +6940,7 @@ type HydraReader(reader: Npgsql.NpgsqlDataReader) =
     member __.``humanresources.vjobcandidate`` = humanresources.Readers.vjobcandidateReader (reader, buildGetOrdinal typeof<humanresources.vjobcandidate>)
     member __.``humanresources.vjobcandidateeducation`` = humanresources.Readers.vjobcandidateeducationReader (reader, buildGetOrdinal typeof<humanresources.vjobcandidateeducation>)
     member __.``humanresources.vjobcandidateemployment`` = humanresources.Readers.vjobcandidateemploymentReader (reader, buildGetOrdinal typeof<humanresources.vjobcandidateemployment>)
+    member __.``network_sample.network_addresses`` = network_sample.Readers.network_addressesReader (reader, buildGetOrdinal typeof<network_sample.network_addresses>)
     member __.``pe.a`` = pe.Readers.aReader (reader, buildGetOrdinal typeof<pe.a>)
     member __.``pe.at`` = pe.Readers.atReader (reader, buildGetOrdinal typeof<pe.at>)
     member __.``pe.be`` = pe.Readers.beReader (reader, buildGetOrdinal typeof<pe.be>)
@@ -7080,6 +7117,8 @@ type HydraReader(reader: Npgsql.NpgsqlDataReader) =
         | "humanresources.vjobcandidateeducation", true -> __.``humanresources.vjobcandidateeducation``.ReadIfNotNull >> box
         | "humanresources.vjobcandidateemployment", false -> __.``humanresources.vjobcandidateemployment``.Read >> box
         | "humanresources.vjobcandidateemployment", true -> __.``humanresources.vjobcandidateemployment``.ReadIfNotNull >> box
+        | "network_sample.network_addresses", false -> __.``network_sample.network_addresses``.Read >> box
+        | "network_sample.network_addresses", true -> __.``network_sample.network_addresses``.ReadIfNotNull >> box
         | "pe.a", false -> __.``pe.a``.Read >> box
         | "pe.a", true -> __.``pe.a``.ReadIfNotNull >> box
         | "pe.at", false -> __.``pe.at``.Read >> box
@@ -7390,6 +7429,12 @@ type HydraReader(reader: Npgsql.NpgsqlDataReader) =
         elif t = typedefof<string[]> then Some(wrapRef reader.GetFieldValue<string[]>)
         elif t = typedefof<System.Guid> then Some(wrapValue reader.GetGuid)
         elif t = typedefof<System.Guid[]> then Some(wrapRef reader.GetFieldValue<System.Guid[]>)
+        elif t = typedefof<System.Net.IPNetwork> then Some(wrapRef reader.GetFieldValue)
+        elif t = typedefof<System.Net.IPNetwork[]> then Some(wrapRef reader.GetFieldValue<System.Net.IPNetwork[]>)
+        elif t = typedefof<System.Net.IPAddress> then Some(wrapRef reader.GetFieldValue)
+        elif t = typedefof<System.Net.IPAddress[]> then Some(wrapRef reader.GetFieldValue<System.Net.IPAddress[]>)
+        elif t = typedefof<System.Net.NetworkInformation.PhysicalAddress> then Some(wrapRef reader.GetFieldValue)
+        elif t = typedefof<System.Net.NetworkInformation.PhysicalAddress[]> then Some(wrapRef reader.GetFieldValue<System.Net.NetworkInformation.PhysicalAddress[]>)
         elif t = typedefof<System.TimeSpan> then Some(wrapRef reader.GetTimeSpan)
         elif t = typedefof<System.TimeSpan[]> then Some(wrapRef reader.GetFieldValue<System.TimeSpan[]>)
         elif t = typedefof<System.DateOnly> then Some(wrapValue reader.GetDateOnly)

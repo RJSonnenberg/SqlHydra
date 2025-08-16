@@ -3307,15 +3307,15 @@ CREATE TYPE ext.Mood AS ENUM ('sad', 'ok', 'happy');
 
 -- Create a table in `ext` schema that references the enum
 CREATE TABLE ext.Person (
-    Name text not null,
-    CurrentMood ext.Mood not null
+  Name text not null,
+  CurrentMood ext.Mood not null
 );
 
 CREATE TABLE ext.Arrays
 (
-    id        			text        not null,    
-    text_array  		text[]      not null,
-	integer_array		integer[]	not null
+  id        			text        not null,
+  text_array  		text[]      not null,
+  integer_array		integer[]	  not null
 );
 
 \pset tuples_only off
@@ -3328,3 +3328,24 @@ CREATE TABLE ext.Arrays
 -- All the tables in Adventureworks:
 -- (Did you know that \dt can filter schema and table names using RegEx?)
 \dt (humanresources|person|production|purchasing|sales).*
+
+CREATE SCHEMA IF NOT EXISTS network_sample;
+
+CREATE TABLE IF NOT EXISTS network_sample.network_addresses (
+  id serial primary key,
+  net_cidr cidr not null,
+  net_inet inet not null,
+  net_macaddr macaddr not null,
+  net_macaddr8 macaddr8 not null
+);
+
+INSERT INTO network_sample.network_addresses (net_cidr, net_inet, net_macaddr, net_macaddr8)
+VALUES
+  ('192.168.100.128/25', '127.0.0.1', '08:00:2b:01:02:03', '08:00:2b:01:02:03:04:05'),  -- IPv4
+  ('::ffff:1.2.3.0/120', '::10.2.3.4', '08-00-2b-01-02-03', '08-00-2b-01-02-03-04-05'),  -- IPv6
+  ('2001:4f8:3:ba::/64', '2001:4860:4860::8888', '08002b:010203', '08002b:0102030405'),
+  ('2001:4f8:3:ba::/64', '::1', '08002b-010203', '08002b-0102030405'),
+  ('2001:4f8:3:ba::/64', '::1', '0800.2b01.0203', '0800.2b01.0203.0405'),
+  ('2001:4f8:3:ba::/64', '::1', '0800-2b01-0203', '0800-2b01-0203-0405'),
+  ('192.168.100.128/25', '127.0.0.1', '08002b010203', '08002b01:02030405'),
+  ('192.168.100.128/25', '127.0.0.1', '08002b010203', '08002b0102030405');

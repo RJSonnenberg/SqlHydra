@@ -22,10 +22,10 @@ let cfg =
         Filters = Filters.Empty
     }
 
-let lazySchema = lazy SqlServerSchemaProvider.getSchema cfg false
+let lazySchema = lazy SqlServerSchemaProvider.getSchema (cfg, false)
 
 let getCode cfg = 
-    SchemaTemplate.generate cfg AppInfo.info lazySchema.Value "---" false
+    SchemaTemplate.generate cfg Provider.provider lazySchema.Value "---" false
 
 let inCode (str: string) cfg = 
     let code = getCode cfg
@@ -37,7 +37,7 @@ let notInCode (str: string) cfg =
 
 [<Test; Ignore "Ignore">]
 let ``Print Schema``() = 
-    let schema = SqlServerSchemaProvider.getSchema cfg false
+    let schema = SqlServerSchemaProvider.getSchema (cfg, false)
     printfn "Schema: %A" schema
 
 [<Test>]
